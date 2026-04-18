@@ -163,11 +163,11 @@ Validity is guaranteed at 100% across all datasets via model-prediction-based fi
 ## Citation
 
 ```bibtex
-@article{denshap2025,
+@article{denshap2026,
   title  = {DenSHAP: Density-Aware Background Dataset Construction
             for Counterfactual Shapley Explanations},
   author = {[Author]},
-  year   = {2025}
+  year   = {2026}
 }
 ```
 
