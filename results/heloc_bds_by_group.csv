@@ -1,4 +1,0 @@
-Dataset,Group,N,CF_SHAP_BDS,DenSHAP_BDS,Delta_pct,Direction
-HELOC,Easy,928,0.9852,0.9787,-0.66,↓0.7%
-HELOC,Medium,339,0.9635,0.972,0.88,↑0.9%
-HELOC,Hard,708,0.9386,0.965,2.81,↑2.8%
