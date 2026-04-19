@@ -1,0 +1,4 @@
+Dataset,Group,N,CF_SHAP_BDS,DenSHAP_BDS,Delta_pct,Direction
+WINE,Easy,429,0.9792,0.9795,0.0314,↑0.03%
+WINE,Medium,133,0.9756,0.9765,0.0943,↑0.09%
+WINE,Hard,284,0.9574,0.9754,1.8872,↑1.89%

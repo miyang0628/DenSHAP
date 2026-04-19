@@ -1,0 +1,66 @@
+DenSHAP Experiment Log
+eval_n     = 999999
+k_lof list = [10, 20, 30, 50]
+base output= results
+
+
+=== k_lof=10 | output=results\klof10 ===
+  [HELOC] Optuna Best AUC: 0.8098 | params: {'n_estimators': 427, 'max_depth': 3, 'learning_rate': 0.015928850423477626, 'subsample': 0.7727431143998708, 'colsample_bytree': 0.8209823503143753, 'min_child_weight': 9, 'gamma': 0.8612290014449612, 'reg_alpha': 0.012324531280088652, 'reg_lambda': 0.05970576865103405, 'eval_metric': 'logloss', 'random_state': 42, 'verbosity': 0}
+  [HELOC] Model cached: results\heloc_model.joblib
+  [HELOC] Accuracy: 0.7241 | AUC: 0.8013
+  [HELOC] k_lof=10 | CF-SHAP: 773.7s | DenSHAP: 725.9s
+  [HELOC] k_lof=10 Saved → results\klof10/
+  [WINE] Optuna Best AUC: 0.8937 | params: {'n_estimators': 131, 'max_depth': 8, 'learning_rate': 0.12466219309509552, 'subsample': 0.9421582446956582, 'colsample_bytree': 0.8141153106445258, 'min_child_weight': 1, 'gamma': 0.16353417241338053, 'reg_alpha': 0.0002543529121075316, 'reg_lambda': 0.5835755414984387, 'eval_metric': 'logloss', 'random_state': 42, 'verbosity': 0}
+  [WINE] Model cached: results\wine_model.joblib
+  [WINE] Accuracy: 0.8846 | AUC: 0.9111
+  [WINE] k_lof=10 | CF-SHAP: 462.0s | DenSHAP: 236.4s
+  [WINE] k_lof=10 Saved → results\klof10/
+  [LENDINGCLUB] Optuna Best AUC: 0.7087 | params: {'n_estimators': 297, 'max_depth': 5, 'learning_rate': 0.01873428970959412, 'subsample': 0.6377739022043656, 'colsample_bytree': 0.6455537865782779, 'min_child_weight': 10, 'gamma': 0.5053911182059078, 'reg_alpha': 8.69425964166954, 'reg_lambda': 0.11090510438662494, 'eval_metric': 'logloss', 'random_state': 42, 'verbosity': 0}
+  [LENDINGCLUB] Model cached: results\lendingclub_model.joblib
+  [LENDINGCLUB] Accuracy: 0.6520 | AUC: 0.7207
+  [LENDINGCLUB] k_lof=10 | CF-SHAP: 1774.3s | DenSHAP: 1552.0s
+  [LENDINGCLUB] k_lof=10 Saved → results\klof10/
+
+=== k_lof=20 | output=results\klof20 ===
+  [HELOC] Loaded cached model
+  [HELOC] Accuracy: 0.7241 | AUC: 0.8013
+  [HELOC] k_lof=20 | CF-SHAP: 771.9s | DenSHAP: 733.5s
+  [HELOC] k_lof=20 Saved → results\klof20/
+  [WINE] Loaded cached model
+  [WINE] Accuracy: 0.8846 | AUC: 0.9111
+  [WINE] k_lof=20 | CF-SHAP: 449.1s | DenSHAP: 233.1s
+  [WINE] k_lof=20 Saved → results\klof20/
+  [LENDINGCLUB] Loaded cached model
+  [LENDINGCLUB] Accuracy: 0.6520 | AUC: 0.7207
+  [LENDINGCLUB] k_lof=20 | CF-SHAP: 1744.2s | DenSHAP: 1557.1s
+  [LENDINGCLUB] k_lof=20 Saved → results\klof20/
+
+=== k_lof=30 | output=results\klof30 ===
+  [HELOC] Loaded cached model
+  [HELOC] Accuracy: 0.7241 | AUC: 0.8013
+  [HELOC] k_lof=30 | CF-SHAP: 761.7s | DenSHAP: 720.5s
+  [HELOC] k_lof=30 Saved → results\klof30/
+  [WINE] Loaded cached model
+  [WINE] Accuracy: 0.8846 | AUC: 0.9111
+  [WINE] k_lof=30 | CF-SHAP: 450.5s | DenSHAP: 234.8s
+  [WINE] k_lof=30 Saved → results\klof30/
+  [LENDINGCLUB] Loaded cached model
+  [LENDINGCLUB] Accuracy: 0.6520 | AUC: 0.7207
+  [LENDINGCLUB] k_lof=30 | CF-SHAP: 1749.3s | DenSHAP: 1569.3s
+  [LENDINGCLUB] k_lof=30 Saved → results\klof30/
+
+=== k_lof=50 | output=results\klof50 ===
+  [HELOC] Loaded cached model
+  [HELOC] Accuracy: 0.7241 | AUC: 0.8013
+  [HELOC] k_lof=50 | CF-SHAP: 760.0s | DenSHAP: 730.5s
+  [HELOC] k_lof=50 Saved → results\klof50/
+  [WINE] Loaded cached model
+  [WINE] Accuracy: 0.8846 | AUC: 0.9111
+  [WINE] k_lof=50 | CF-SHAP: 451.0s | DenSHAP: 238.2s
+  [WINE] k_lof=50 Saved → results\klof50/
+  [LENDINGCLUB] Loaded cached model
+  [LENDINGCLUB] Accuracy: 0.6520 | AUC: 0.7207
+  [LENDINGCLUB] k_lof=50 | CF-SHAP: 1747.5s | DenSHAP: 1587.6s
+  [LENDINGCLUB] k_lof=50 Saved → results\klof50/
+
+Total wall-clock time: 6.16 h
