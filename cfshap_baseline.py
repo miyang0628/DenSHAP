@@ -10,11 +10,13 @@ Core logic of Algorithm 1:
     3. Compute marginal (interventional) SHAP values
     4. Evaluate CA (Counterfactual-Ability) and Plausibility
 
-Also implements 4 comparison baselines:
-    - SHAP_TRAIN : Full training data as background
-    - SHAP_D_LAB : All opposite-label data as background
-    - SHAP_D_PRED: All opposite-predicted data as background
-    - CF_SHAP    : KNN-based CF set as background (proposed in paper)
+Baselines:
+    - SHAP_TRAIN    : Full training data as background
+    - SHAP_D_LAB    : All opposite-label data as background
+    - SHAP_D_PRED   : All opposite-predicted data as background
+    - CF_SHAP       : KNN-based CF set as background (Albini et al. 2022)
+    - INSTANCE_SHAP : K nearest training instances regardless of label
+                      (Verma et al. 2024 — distance-only, no opposite filter)
 """
 
 import numpy as np
@@ -30,11 +32,11 @@ warnings.filterwarnings('ignore')
 # ─────────────────────────────────────────────
 
 def compute_iqr(X_train: np.ndarray) -> np.ndarray:
-    """Compute IQR per feature for CA normalization."""
+    """Compute IQR per feature for normalization."""
     q75 = np.percentile(X_train, 75, axis=0)
     q25 = np.percentile(X_train, 25, axis=0)
     iqr = q75 - q25
-    iqr[iqr == 0] = 1.0  # avoid division by zero
+    iqr[iqr == 0] = 1.0
     return iqr
 
 
@@ -106,20 +108,6 @@ def get_background_cf_shap(
 ) -> tuple:
     """
     CF-SHAP (Algorithm 1): IQR-normalized KNN search in opposite-label data.
-
-    Parameters
-    ----------
-    x                : query input (1D array)
-    X_train          : training data
-    y_train          : training labels
-    query_label      : predicted label of x
-    k                : number of neighbors
-    fallback_to_d_lab: fall back to D_LAB if KNN fails
-
-    Returns
-    -------
-    background : selected background data (np.ndarray)
-    success    : True if k neighbors were found
     """
     opposite_mask = (y_train != query_label)
     X_opp = X_train[opposite_mask]
@@ -140,6 +128,50 @@ def get_background_cf_shap(
     return background, success
 
 
+def get_background_instance_shap(
+    x: np.ndarray,
+    X_train: np.ndarray,
+    k: int = 100,
+    iqr: np.ndarray = None
+) -> np.ndarray:
+    """
+    InstanceSHAP: IQR-normalized KNN from full training set, no label filter.
+
+    Corresponds to Verma et al. (2024): assigns instance-specific background
+    sets by selecting the k nearest training instances to each query,
+    using distance only (no density weighting, no opposite-label constraint).
+
+    This is the direct distance-only counterpart to DenSHAP:
+        InstanceSHAP : w(x_i) ∝ exp(-d(x, x_i))            — distance only
+        DenSHAP      : w(x_i) ∝ exp(-d(x, x_i)) / LOF(x_i) — distance + density
+
+    Parameters
+    ----------
+    x        : query point, must be 1D array of shape (n_features,)
+    X_train  : full training data, shape (n_samples, n_features)
+    k        : number of neighbors to retrieve
+    iqr      : precomputed per-feature IQR; computed from X_train if None
+    """
+    # Ensure x is a 1D query point
+    x = np.asarray(x, dtype=float).ravel()
+    if iqr is None:
+        iqr = compute_iqr(X_train)
+
+    # Shape guard
+    if x.shape[0] != X_train.shape[1]:
+        raise ValueError(
+            f'get_background_instance_shap: x has {x.shape[0]} features '
+            f'but X_train has {X_train.shape[1]}. '
+            f'Pass a single query point, not a batch.'
+        )
+
+    n_neighbors = min(k, len(X_train))
+    nn = NearestNeighbors(n_neighbors=n_neighbors, metric='euclidean')
+    nn.fit(iqr_scale(X_train, iqr))
+    _, indices = nn.kneighbors(iqr_scale(x.reshape(1, -1), iqr))
+    return X_train[indices[0]]
+
+
 # ─────────────────────────────────────────────
 # 3. SHAP value computation
 # ─────────────────────────────────────────────
@@ -155,14 +187,8 @@ def compute_shap_values(
 
     Parameters
     ----------
-    model      : trained classifier
-    x          : query input (1D array)
-    background : background dataset
-    model_type : 'tree' or 'kernel'
-
-    Returns
-    -------
-    shap_values : per-feature SHAP values (1D array)
+    model_type : 'tree' (XGBoost / LightGBM / RF via TreeExplainer)
+                 'kernel' (model-agnostic fallback)
     """
     if model_type == 'tree':
         explainer = shap.TreeExplainer(
@@ -175,7 +201,7 @@ def compute_shap_values(
 
     sv = explainer.shap_values(x.reshape(1, -1))
     if isinstance(sv, list):
-        sv = sv[1]  # binary classification: use class-1 SHAP values
+        sv = sv[1]
     return sv.flatten()
 
 
@@ -194,16 +220,7 @@ def counterfactual_ability(
     top_k_list: list = [1, 2, 3, 5],
     failure_penalty: float = 10.0
 ) -> dict:
-    """
-    Compute CA (Counterfactual-Ability).
-
-    Replaces top-k SHAP-ranked features with nearest opposite-label neighbor values
-    and measures the minimum IQR-normalized L1 cost to cross the decision boundary.
-
-    Formula:
-        CA = min_{x' in A_k, F(x') != F(x)} c_L1(x, x')
-        c_L1(x, x') = sum_i |x_i - x'_i| / IQR(X_i)
-    """
+    """Compute CA (Counterfactual-Ability)."""
     results = {}
     feature_order = np.argsort(np.abs(shap_values))[::-1]
 
@@ -237,13 +254,7 @@ def plausibility(
     n_neighbors: int = 5,
     iqr: np.ndarray = None
 ) -> float:
-    """
-    Compute Plausibility using IQR-normalized distance.
-
-    Formula:
-        Plausibility(x') = (1/5) * sum_{j=1}^{5} d_q(x', NN_j(x'))
-    Lower is better (closer to real data distribution).
-    """
+    """Compute Plausibility using IQR-normalized distance. Lower is better."""
     if iqr is None:
         iqr = compute_iqr(X_train)
     X_scaled    = iqr_scale(X_train, iqr)
@@ -260,8 +271,7 @@ def plausibility(
 
 class CFSHAPEvaluator:
     """
-    Unified evaluator for CF-SHAP and 4 comparison baselines.
-    Accepts an optional LOF estimator to compute BDS for comparison with DenSHAP.
+    Unified evaluator for CF-SHAP and comparison baselines including InstanceSHAP.
     """
 
     def __init__(
@@ -276,46 +286,52 @@ class CFSHAPEvaluator:
         random_state: int = 42,
         lof_estimator=None
     ):
-        self.model = model
-        self.X_train = X_train
-        self.y_train = y_train
-        self.k = k_neighbors
-        self.model_type = model_type
-        self.top_k_list = top_k_list
-        self.failure_penalty = failure_penalty
-        self.iqr = compute_iqr(X_train)
-        self.lof_estimator = lof_estimator
-        self.y_pred_train = model.predict(X_train)
+        self.model          = model
+        self.X_train        = X_train
+        self.y_train        = y_train
+        self.k              = k_neighbors
+        self.model_type     = model_type
+        self.top_k_list     = top_k_list
+        self.failure_penalty= failure_penalty
+        self.iqr            = compute_iqr(X_train)
+        self.lof_estimator  = lof_estimator
+        self.y_pred_train   = model.predict(X_train)
         np.random.seed(random_state)
         self._build_opposite_index()
 
     def _build_opposite_index(self):
-        """Pre-build per-class opposite-label index for speed."""
         self._opposite_index = {}
         for label in np.unique(self.y_train):
             mask = self.y_train != label
             self._opposite_index[label] = self.X_train[mask]
 
     def _evaluate_single(self, x: np.ndarray, query_label: int) -> dict:
-        """Evaluate all 4 baselines for a single sample."""
+        """Evaluate all baselines for a single 1D query point x."""
+        # Ensure x is 1D
+        x = np.asarray(x, dtype=float).ravel()
         row = {}
 
+        # ── Background construction ────────────────────────────
         methods = {
-            'SHAP_TRAIN' : get_background_train(self.X_train, self.k),
-            'SHAP_D_LAB' : get_background_d_lab(self.X_train, self.y_train, query_label, self.k),
-            'SHAP_D_PRED': get_background_d_pred(self.X_train, self.y_pred_train, query_label, self.k),
+            'SHAP_TRAIN'   : get_background_train(self.X_train, self.k),
+            'SHAP_D_LAB'   : get_background_d_lab(self.X_train, self.y_train, query_label, self.k),
+            'SHAP_D_PRED'  : get_background_d_pred(self.X_train, self.y_pred_train, query_label, self.k),
+            'INSTANCE_SHAP': get_background_instance_shap(x, self.X_train, self.k, self.iqr),
         }
+
         bg_cfshap, knn_success = get_background_cf_shap(
             x, self.X_train, self.y_train, query_label, self.k
         )
         methods['CF_SHAP'] = bg_cfshap
         row['CF_SHAP_knn_success'] = knn_success
 
+        # ── Per-method evaluation ──────────────────────────────
         for method_name, background in methods.items():
             if background is None or len(background) == 0:
                 for k in self.top_k_list:
                     row[f'{method_name}_CA_top{k}'] = self.failure_penalty
                 row[f'{method_name}_plausibility'] = np.nan
+                row[f'{method_name}_bds']          = np.nan
                 continue
 
             try:
@@ -324,6 +340,7 @@ class CFSHAPEvaluator:
                 for k in self.top_k_list:
                     row[f'{method_name}_CA_top{k}'] = self.failure_penalty
                 row[f'{method_name}_plausibility'] = np.nan
+                row[f'{method_name}_bds']          = np.nan
                 continue
 
             ca = counterfactual_ability(
@@ -350,7 +367,6 @@ class CFSHAPEvaluator:
         y_eval_pred: np.ndarray,
         verbose: bool = True
     ) -> pd.DataFrame:
-        """Run evaluation on the full evaluation set."""
         records = []
         n = len(X_eval)
         for i, (x, label) in enumerate(zip(X_eval, y_eval_pred)):
@@ -360,8 +376,7 @@ class CFSHAPEvaluator:
         return pd.DataFrame(records)
 
     def summary(self, results_df: pd.DataFrame) -> pd.DataFrame:
-        """Aggregate results by method mean."""
-        methods = ['SHAP_TRAIN', 'SHAP_D_LAB', 'SHAP_D_PRED', 'CF_SHAP']
+        methods = ['SHAP_TRAIN', 'SHAP_D_LAB', 'SHAP_D_PRED', 'INSTANCE_SHAP', 'CF_SHAP']
         rows = []
         for m in methods:
             row = {'Method': m}
