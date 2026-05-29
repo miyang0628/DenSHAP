@@ -1,0 +1,13 @@
+DenSHAP Robustness Experiment Log
+models   = ['rf']
+datasets = ['heloc', 'wine', 'lendingclub']
+k_lof    = [20]
+
+  [HELOC|rf] AUC=0.8020 Acc=0.7276
+  [HELOC|rf] k_lof=20 elapsed=8081.6s → results\rf\klof20/
+  [WINE|rf] AUC=0.9095 Acc=0.8831
+  [WINE|rf] k_lof=20 elapsed=1453.0s → results\rf\klof20/
+  [LENDINGCLUB|rf] AUC=0.7164 Acc=0.6528
+  [LENDINGCLUB|rf] k_lof=20 elapsed=15586.6s → results\rf\klof20/
+
+Total time: 6.98 h

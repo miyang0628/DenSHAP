@@ -1,0 +1,18 @@
+InstanceSHAP Supplementary Experiment Log (v2)
+datasets = ['heloc', 'wine', 'lendingclub']
+k_lof    = [10, 20, 30, 50]
+
+  [HELOC] k_lof=10 InstanceSHAP done (336.8s) -> results\xgboost\klof10/
+  [WINE] k_lof=10 InstanceSHAP done (84.8s) -> results\xgboost\klof10/
+  [LENDINGCLUB] k_lof=10 InstanceSHAP done (712.3s) -> results\xgboost\klof10/
+  [HELOC] k_lof=20 InstanceSHAP done (333.8s) -> results\xgboost\klof20/
+  [WINE] k_lof=20 InstanceSHAP done (85.0s) -> results\xgboost\klof20/
+  [LENDINGCLUB] k_lof=20 InstanceSHAP done (712.2s) -> results\xgboost\klof20/
+  [HELOC] k_lof=30 InstanceSHAP done (335.3s) -> results\xgboost\klof30/
+  [WINE] k_lof=30 InstanceSHAP done (85.0s) -> results\xgboost\klof30/
+  [LENDINGCLUB] k_lof=30 InstanceSHAP done (712.2s) -> results\xgboost\klof30/
+  [HELOC] k_lof=50 InstanceSHAP done (334.7s) -> results\xgboost\klof50/
+  [WINE] k_lof=50 InstanceSHAP done (88.9s) -> results\xgboost\klof50/
+  [LENDINGCLUB] k_lof=50 InstanceSHAP done (714.3s) -> results\xgboost\klof50/
+
+Total time: 4545.0s

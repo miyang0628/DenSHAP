@@ -1,0 +1,4 @@
+Dataset,Model,k_lof,Group,N,Test_AUC,CF_SHAP_BDS,INST_SHAP_BDS,DenSHAP_BDS,Delta_vs_CF,Delta_vs_Inst
+WINE,lightgbm,20,Easy,380,0.907,0.9779,0.9898,0.9798,0.19,-1.02
+WINE,lightgbm,20,Medium,144,0.907,0.9758,0.9771,0.9775,0.17,0.04
+WINE,lightgbm,20,Hard,336,0.907,0.9602,0.9563,0.9757,1.61,2.03
